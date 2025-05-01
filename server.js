@@ -49,7 +49,7 @@ app.post("/ambulance", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("ambulance")
-      .select("id, location"); // assuming location is JSONB { latitude, longitude }
+      .select("phone, location"); // assuming location is JSONB { latitude, longitude }
 
     if (error) {
       return res.status(500).json({ error: error.message });
