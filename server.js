@@ -49,7 +49,7 @@ app.post("/ambulance", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("ambulance")
-      .select("phone, location"); // assuming location is JSONB { latitude, longitude }
+      .select("phoneNumber, location, status, uuid");
 
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -63,6 +63,11 @@ app.post("/ambulance", async (req, res) => {
     let minDistance = Infinity;
 
     data.forEach((ambulance) => {
+      // Skip ambulances with status === 'Available'
+      if (ambulance.status !== "Available") {
+        return;
+      }
+
       const ambLat = ambulance.location.latitude;
       const ambLon = ambulance.location.longitude;
 
@@ -70,9 +75,18 @@ app.post("/ambulance", async (req, res) => {
 
       if (dist < minDistance) {
         minDistance = dist;
-        nearestAmbulance = { ...ambulance, distance_km: dist };
+        nearestAmbulance = {
+          uuid: ambulance.uuid,
+          phone: ambulance.phoneNumber,
+          location: ambulance.location,
+          distance_km: dist,
+        };
       }
     });
+
+    if (!nearestAmbulance) {
+      return res.status(404).json({ message: "No active ambulances found." });
+    }
 
     res.json({ nearestAmbulance });
   } catch (err) {
